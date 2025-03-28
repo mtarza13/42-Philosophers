@@ -1,28 +1,31 @@
 #include "philo.h"
 
-int init_forks(t_shared *data)
+int init_forks(t_shared *shared)
 {
 	int i ;
 	i = 0;
 
-	while(i < data->num_philos)
+	while(i < shared->num_philos)
 	{
-		if(pthread_mutex_init(&data->forks[i],NULL) != NULL)
+		if(pthread_mutex_init(&shared->forks[i],NULL) != 0)
 		{
+			
 			while(i--)
-				pthread_mutex_destroy(&data->forks[i]);
-				free(data->forks);
+				pthread_mutex_destroy(&shared->forks[i]);
+				free(shared->forks);
 				return(EXIT_FAILURE);
 		}
-		if(pthread_mutex_init(&data->print_lock ,NULL) != NULL)
+		i++;
+	}
+	if(pthread_mutex_init(&shared->print_lock ,NULL) != 0)
 		{
-			i = 0;
+			i = shared->num_philos;
 			while(i--)
-			pthread_mutex_destroy(&data->forks[i]);
-			free(data->forks);
+			pthread_mutex_destroy(&shared->forks[i]);
+			free(shared->forks);
 			return(EXIT_FAILURE);
 		}
-	}
+	
 	return(SUCCESS);
 }
 int init_shared(t_shared *shared , int argc, char *argv[])
@@ -38,13 +41,29 @@ int init_shared(t_shared *shared , int argc, char *argv[])
 		shared->running = 1;
 		shared->start_time = 0;
 	shared->forks = malloc(shared->num_philos *  sizeof(pthread_mutex_t));
-	if(shared->forks)
+	if(!shared->forks)
 		return(FAILURE);
 
-	if(init_forks(&shared ) != SUCCESS)
+	if(init_forks(shared) != SUCCESS)
 		return(FAILURE);
 }
 
+int init_thread(t_data *data, t_shared *shared)
+{
+	int i  = 0;
+	data->threads = malloc(shared->num_philos * sizeof(pthread_t));
+	if(!data->threads)
+	{
+		while(i < shared->num_philos)
+		{
+			pthread_mutex_destroy(&data->philosophers[i].lock);
+			i++;
+		}
+			free(data->philosophers);
+		return(FAILURE);
+	}
+	return(SUCCESS);
+}
 int init_philosophers(t_data *data)
 {
 	int i = 0;
@@ -52,26 +71,51 @@ int init_philosophers(t_data *data)
 
 	shared = &data->shared;
 	data->philosophers = malloc(shared->num_philos * sizeof(t_philo));
-	if(data)
+	if(data->philosophers)
+		return(FAILURE);
+	while(i < shared->num_philos )
+	{
+		data->philosophers[i].id = i+1;
+		data->philosophers[i].state = THINKING;
+		data->philosophers[i].meals_eaten = 0;
+		data->philosophers[i].last_meal_time = 0;
+		data->philosophers[i].data = data ;
+
+		data->philosophers[i].left_fork = &shared->forks[i];
+		data->philosophers[i].right_fork = &shared->forks[(i+1) % shared->num_philos];
+
+		if(pthread_mutex_init(&data->philosophers[i].lock,NULL)!= 0)
+		{
+			while(--i >= 0)
+			pthread_mutex_destroy(&data->philosophers[i].lock);  		
+				free(data->philosophers);
+			return(FAILURE);
+		}
+		i++;
+	}
+	if(!init_thread(data, shared))
+		return(FAILURE);
+	return(SUCCESS);
 }
+
 
 int init_program(t_data *data , int argc , char *argv[])
 {
 	int i ;
 	i = 0;
-	if(init_shared(&data->shared ,argc,argv)	!= SUCCESS)
+	if(init_shared(&data->shared ,argc,argv) != SUCCESS)
 	{
-		ft_putsrt("Failer to initialize shared resource\n");
+		ft_putstr("Failed to initialize shared resources\n");  
 		return(FAILURE);
 	}
+
 	if(init_philosophers(data) != SUCCESS)
 	{
 		while(i < data->shared.num_philos)
-			pthread_mutex_destroy(&data->shared.forks[i]);
-		pthread_mutex_destroy(&data->shared.forks);
-		
+			pthread_mutex_destroy(&data->shared.forks[i++]);
+			
+		pthread_mutex_destroy(&data->shared.print_lock);
 		free(data->shared.forks);
 		ft_putstr("Failed to initialize philosophers\n");
-		return (FAILURE);
 	}
 }
