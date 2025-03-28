@@ -1,9 +1,5 @@
 #include <unistd.h>
-
-typedef struct philo
-{
-    int must_eat_count;
-} t_philo;
+#include "philo.h"
 
 void ft_putstr(char *s)
 {
@@ -53,6 +49,8 @@ int check_is_digit(char *av[], int ac)
     while (i < ac)
     {
         j = 0;
+        if(!av[i][0])
+            return (1);
         while (av[i][j])
         {
             if (!ft_isdigit(av[i][j++]))
@@ -74,27 +72,10 @@ int check_num(int ac, char **av)
     while (i < ac)
     {
         num = ft_atol(av[i]);
-        if (num <= 0 || (i == 1 && num > 200))
+        if (num <= 0 || i == 1)
             return 1;
         i++;
     }
     return 0;
 }
 
-int main(int ac, char *av[])
-{
-    if (ac != 5 && ac != 6)
-    {
-        ft_putstr("invalid_argument\n");
-        return 1;
-    }
-
-    if (check_is_digit(av, ac) != 0 || check_num(ac, av) != 0)
-    {
-        ft_putstr("invalid_argument\n");
-        return 1;
-    }
-
-    ft_putstr("Parsing successful!\n");
-    return 0;
-}
