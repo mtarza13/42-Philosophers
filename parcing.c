@@ -83,8 +83,6 @@ int	check_num(int ac, char **av)
 		num = ft_atol(av[i]);
 		if (num <= 0)
 			return (1);
-		if (i == 1 && num > 200)
-			return (1);
 		i++;
 	}
 	return (0);

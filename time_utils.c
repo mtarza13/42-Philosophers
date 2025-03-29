@@ -6,6 +6,7 @@ long get_time(void)
     gettimeofday(&tv,NULL);
     return((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
+
 void    safe_sleep(int milliseconds)
 {
     long start;
@@ -13,25 +14,26 @@ void    safe_sleep(int milliseconds)
     start = get_time();
     while(1)
     {
+    current = get_time();
     if(current - start >= milliseconds)
         break;
-        usleep(500);
+        usleep(100);
     }
 }
 
-void    printf_messege(t_data *data , int philo_id, char *messege)
+void print_message(t_data *data, int philo_id, char *message)
 {
     long timestamp;
     int running;
+    
     pthread_mutex_lock(&data->shared.print_lock);
     running = data->shared.running;
     if (running)
-	{
-		timestamp = get_time() - data->shared.start_time;
-		printf("%ld %d %s\n", timestamp, philo_id, messege);
-	}
-	
-	pthread_mutex_unlock(&data->shared.print_lock);
+    {
+        timestamp = get_time() - data->shared.start_time;
+        printf("%ld %d %s\n", timestamp, philo_id, message);
+    }
+    pthread_mutex_unlock(&data->shared.print_lock);
 }
 
 int simulation_running(t_data *data)
