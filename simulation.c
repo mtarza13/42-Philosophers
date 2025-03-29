@@ -34,20 +34,18 @@ int check_starvation(t_data *data)
     long time_since_last_meal;
 
     i = 0;
-    now = get_time();
 
     while (i < data->shared.num_philos)
     {
         pthread_mutex_lock(&data->philosophers[i].lock);
 
-        time_since_last_meal = now - data->philosophers[i].last_meal_time;
-        if (data->philosophers[i].state != EATING && 
-            time_since_last_meal > data->shared.time_to_die)
+        time_since_last_meal = get_time() - data->philosophers[i].last_meal_time;
+        if (time_since_last_meal > data->shared.time_to_die)
         {
             pthread_mutex_unlock(&data->philosophers[i].lock);
             
             pthread_mutex_lock(&data->shared.print_lock);
-            printf("%ld %d %s\n", now - data->shared.start_time,
+            printf("%ld %d %s\n", get_time() - data->shared.start_time,
                 data->philosophers[i].id, MSG_DIED);
             data->shared.running = 0;
             pthread_mutex_unlock(&data->shared.print_lock);
@@ -71,7 +69,6 @@ void monitor_philosophers(t_data *data)
             pthread_mutex_unlock(&data->shared.print_lock); 
             break;
         }
-        usleep(700);
     }
 }
 

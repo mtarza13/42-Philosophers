@@ -88,7 +88,7 @@ void	clean_up(t_data *data);
 void philo_eat(t_philo *philo, t_data *data);
 void	philo_sleep(t_philo *philo, t_data *data);
 void	philo_think(t_philo *philo, t_data *data);
-void	handle_one_philo(t_philo *philo, t_data *data);
+int handle_one_philo(t_philo *philo, t_data *data);
 void	*philosopher_life(void *philo_ptr);
 
 long	get_time(void);

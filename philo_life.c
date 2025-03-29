@@ -18,8 +18,8 @@ void philo_eat(t_philo *philo, t_data *data)
     }
 
     pthread_mutex_lock(&philo->lock);
-    philo->state = EATING;
     philo->last_meal_time = get_time();
+    philo->state = EATING;
     print_message(data, philo->id, MSG_EAT);
     pthread_mutex_unlock(&philo->lock);
     
@@ -62,24 +62,16 @@ void philo_think(t_philo *philo, t_data *data)
 
 int handle_one_philo(t_philo *philo, t_data *data)
 {
-    if (pthread_mutex_lock(philo->left_fork) != 0)
-        return FAILURE;
-        
-    if (print_message(data, philo->id, MSG_FORK) != SUCCESS)
-    {
-        pthread_mutex_unlock(philo->left_fork);
-        return FAILURE;
-    }
-    
-    safe_sleep(data->shared.time_to_die + 10);
+    pthread_mutex_lock(philo->left_fork) ;
+    print_message(data, philo->id, MSG_FORK);
+    pthread_mutex_unlock(philo->left_fork) ;
+    safe_sleep(data->shared.time_to_die);
     
     pthread_mutex_lock(&data->shared.print_lock);
     data->shared.running = 0;
-    print_message(data, philo->id, MSG_DIED);
     pthread_mutex_unlock(&data->shared.print_lock);
+    print_message(data, philo->id, MSG_DIED);
     
-    if (pthread_mutex_unlock(philo->left_fork) != 0)
-        return FAILURE;
     
     return SUCCESS;
 }
@@ -105,10 +97,12 @@ void *philosopher_life(void *philo_ptr)
         
         return (NULL);
     }
+    
+ 
 
     while (simulation_running(data))
     {
-        philo_eat(philo, data);
+          philo_eat(philo, data);
         if (!simulation_running(data))
             break;
         philo_sleep(philo, data);
