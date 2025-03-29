@@ -62,14 +62,27 @@ void philo_think(t_philo *philo, t_data *data)
 
 int handle_one_philo(t_philo *philo, t_data *data)
 {
-    pthread_mutex_lock(philo->left_fork);
-    print_message(data, philo->id, MSG_FORK);
-
-    while (simulation_running(data))
-        usleep(1000);
-    pthread_mutex_unlock(philo->left_fork);
+    if (pthread_mutex_lock(philo->left_fork) != 0)
+        return FAILURE;
+        
+    if (print_message(data, philo->id, MSG_FORK) != SUCCESS)
+    {
+        pthread_mutex_unlock(philo->left_fork);
+        return FAILURE;
+    }
+    
+    safe_sleep(data->shared.time_to_die + 10);
+    
+    pthread_mutex_lock(&data->shared.print_lock);
+    data->shared.running = 0;
+    print_message(data, philo->id, MSG_DIED);
+    pthread_mutex_unlock(&data->shared.print_lock);
+    
+    if (pthread_mutex_unlock(philo->left_fork) != 0)
+        return FAILURE;
+    
+    return SUCCESS;
 }
-
 void *philosopher_life(void *philo_ptr)
 {
     t_philo *philo;
