@@ -3,103 +3,135 @@
 /*                                                        :::      ::::::::   */
 /*   philo.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mtarza13 <mtarza13@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mtarza <mtarza@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025-03-29 01:50:36 by mtarza13          #+#    #+#             */
-/*   Updated: 2025-03-29 01:50:36 by mtarza13         ###   ########.fr       */
+/*   Created: 2025/04/10 19:10:22 by mtarza13          #+#    #+#             */
+/*   Updated: 2025/04/10 22:10:48 by mtarza           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PHILO_H
 # define PHILO_H
 
+# include <pthread.h>
+# include <stdbool.h>
+# include <stdint.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include <unistd.h>
-# include <pthread.h>
 # include <sys/time.h>
+# include <unistd.h>
 
-# define SUCCESS 0
-# define FAILURE 1
-# define EXIT_FAILURE 1
+# define TAKE_FORKS "has taken a fork"
+# define THINK "is thinking"
+# define SLEEP "is sleeping"
+# define EAT "is eating"
+# define DIED "died"
 
-# define MSG_DIED "died"
-# define MSG_EAT "is eating"
-# define MSG_SLEEP "is sleeping"
-# define MSG_THINK "is thinking"
-# define MSG_FORK "has taken a fork"
-
-typedef enum e_state
+typedef enum e_philo_state
 {
-	THINKING,
-	EATING,
-	SLEEPING,
-	DEAD
-}	t_state;
+	EATING = 0,
+	SLEEPING = 1,
+	THINKING = 2,
+	DEAD = 3,
+	FULL = 4,
+	DEFU = 5
+}					t_state;
 
-typedef struct s_data	t_data;
-typedef struct s_shared	t_shared;
-typedef struct s_philo	t_philo;
+struct	s_data;
 
 typedef struct s_philo
 {
-	int				id;
+	int				id_philo;
+	int				meals_count;
+	long long		last_time_t_eat;
+
+	struct s_data	*data;
 	t_state			state;
-	int				meals_eaten;
-	long			last_meal_time;
+
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
-	t_data			*data;
-	pthread_mutex_t	lock;
-}	t_philo;
+	pthread_mutex_t	mut_state;
+	pthread_mutex_t	mut_meals_count;
+	pthread_mutex_t	mut_last_time_t_eat;
 
-typedef struct s_shared
-{
-	int				num_philos;
-	int				time_to_die;
-	int				time_to_eat;
-	int				time_to_sleep;
-	int				meals_needed;
-	pthread_mutex_t	*forks;
-	int				running;
-	long			start_time;
-	pthread_mutex_t	print_lock;
-}	t_shared;
+}					t_philo;
 
 typedef struct s_data
 {
-	t_philo			*philosophers;
-	t_shared		shared;
-	pthread_t		*threads;
-}	t_data;
+	int				time_t_eat;
+	int				time_t_sleep;
+	int				time_t_die;
+	long long		time_t_start;
+	bool			is_active;
 
-int		init_forks(t_shared *shared);
-int		init_shared(t_shared *shared, int argc, char *argv[]);
-int		init_thread(t_data *data, t_shared *shared);
-int		init_philosophers(t_data *data);
-int		init_program(t_data *data, int argc, char *argv[]);
+	int				nb_philos;
+	int				nb_meals;
 
-int		all_have_eaten_enough(t_data *data);
-int		check_starvation(t_data *data);
-void	monitor_philosophers(t_data *data);
-void	start_simulation(t_data *data);
-void	clean_up(t_data *data);
+	pthread_mutex_t	mut_time_t_eat;
+	pthread_mutex_t	mut_time_t_sleep;
+	pthread_mutex_t	mut_time_t_die;
+	pthread_mutex_t	mut_time_t_start;
+	pthread_mutex_t	mut_print;
+	pthread_mutex_t	mut_is_active;
+	pthread_mutex_t	mut_nb_philos;
+	pthread_mutex_t	*fork;
 
-void philo_eat(t_philo *philo, t_data *data);
-void	philo_sleep(t_philo *philo, t_data *data);
-void	philo_think(t_philo *philo, t_data *data);
-int handle_one_philo(t_philo *philo, t_data *data);
-void	*philosopher_life(void *philo_ptr);
+	t_philo			*philos;
 
-long	get_time(void);
-void	safe_sleep(int milliseconds);
-void	print_message(t_data *data, int philo_id, char *message);
-int		simulation_running(t_data *data);
+	pthread_t		monit_death;
+	pthread_t		monit_dining_complete;
+	pthread_t		*philosopher_th;
 
-int		check_is_digit(char *av[], int ac);
-int		check_num(int ac, char **av);
-int		ft_atol(char *str);
-void	ft_putstr(char *s);
-int		ft_isdigit(int c);
+}					t_data;
+
+int					check_argment(int argc, char *argv[]);
+int					check_is_digit(char *av[], int ac);
+int					num_valid(int ac, char **av);
+int					ft_atol(char *str);
+int					ft_isdigit(int c);
+
+int					init_data(t_data *data, int argc, char *argv[]);
+void				init_default_data(t_data *data, int argc, char *argv[]);
+int					allocate_resource(t_data *data);
+int					init_mutex_all(t_data *data);
+
+void				init_philo(t_data *data);
+void				init_forks(t_data *data);
+int					start_life(t_data *data);
+
+void				*death_monitor(void *data_arg);
+void				*dining_complete_monitor(void *data_p);
+
+void				notify_all_philos(t_data *data);
+int					philo_die(t_philo *philo);
+t_state				get_state_philo(t_philo *philo);
+int					get_die_time(t_philo *philo);
+
+void				*handle_one_philo(t_philo *philo);
+void				*routine(void *philo_arg);
+int					dining_cycle(t_philo *philo);
+int					eat(t_philo *philo);
+int					calculate_thinking_time(t_philo *philo);
+
+int					take_left_fork(t_philo *philo);
+int					try_to_take_forks(t_philo *philo);
+int					take_single_fork(t_philo *philo, pthread_mutex_t *fork);
+void				get_fork_order(t_philo *philo, pthread_mutex_t **first,
+						pthread_mutex_t **second);
+
+bool				is_sim_running(t_data *data);
+void				custom_sleep(int sleep_time, t_data *data);
+void				update_meals_count(t_philo *philo);
+void				print_status(t_philo *philo, char *msg);
+long long			get_time(void);
+
+void				set_last_time_eat(t_philo *philo, long long time);
+void				set_philo_status(t_philo *philo, t_state state);
+int					get_number_philos(t_data *data);
+int					get_last_time_to_eat(t_philo *philo);
+
+int					execute_philo(int ac, char *av[]);
+void				join_threads(t_data *data);
+void				cleanup_resources(t_data *data);
 
 #endif
