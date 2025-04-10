@@ -6,7 +6,7 @@
 /*   By: mtarza <mtarza@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 22:06:55 by mtarza            #+#    #+#             */
-/*   Updated: 2025/04/10 22:10:34 by mtarza           ###   ########.fr       */
+/*   Updated: 2025/04/10 22:18:40 by mtarza           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ int	check_argment(int argc, char *argv[])
 {
 	if (argc != 5 && argc != 6)
 	{
-		printf("Usage: % s invalid \n ", argv[0]);
+		printf("Usage: %s invalid \n ", argv[0]);
 		return (1);
 	}
 	if (num_valid(argc, argv) != 0 || check_is_digit(argv, argc) != 0)

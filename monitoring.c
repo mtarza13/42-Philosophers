@@ -6,7 +6,7 @@
 /*   By: mtarza <mtarza@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 22:06:54 by mtarza            #+#    #+#             */
-/*   Updated: 2025/04/10 22:06:55 by mtarza           ###   ########.fr       */
+/*   Updated: 2025/04/10 22:20:05 by mtarza           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ void	*death_monitor(void *data_arg)
 			if (check_philosopher_death(data->philos, data, i))
 				return (NULL);
 			i++;
-			usleep(200);
+			usleep(10000);
 		}
 	}
 	return (NULL);
