@@ -114,29 +114,101 @@ Coordinate access to shared resources (forks) without causing:
 
 #### Data Structures
 ```c
-typedef struct s_philo {
-    int             id;                 // Philosopher ID (1-N)
-    int             meals_eaten;        // Meals consumed
-    long long       last_meal_time;     // Timestamp of last meal
-    pthread_t       thread;             // Philosopher thread
-    pthread_mutex_t *left_fork;         // Left fork mutex
-    pthread_mutex_t *right_fork;        // Right fork mutex
-    struct s_data   *data;              // Shared data reference
-} t_philo;
+/**
+ * @brief Enumeration representing the different states a philosopher can be in
+ * 
+ * This enum defines all possible states during the simulation lifecycle.
+ * Each state represents a specific action or condition of a philosopher.
+ */
+typedef enum e_philo_state
+{
+	EATING = 0,		/**< Philosopher is currently eating (has both forks) */
+	SLEEPING = 1,	/**< Philosopher is sleeping after eating */
+	THINKING = 2,	/**< Philosopher is thinking (waiting for forks or between actions) */
+	DEAD = 3,		/**< Philosopher has died from starvation */
+	FULL = 4,		/**< Philosopher has eaten the required number of meals */
+	DEFU = 5		/**< Default/undefined state (initialization state) */
+}					t_state;
 
-typedef struct s_data {
-    int             philo_count;        // Number of philosophers
-    long long       time_to_die;       // Death timer (ms)
-    long long       time_to_eat;       // Eating duration (ms)
-    long long       time_to_sleep;     // Sleeping duration (ms)
-    int             must_eat_count;     // Required meals (-1 if not specified)
-    long long       start_time;        // Simulation start time
-    int             simulation_end;     // End flag
-    pthread_mutex_t *forks;             // Fork mutexes array
-    pthread_mutex_t print_mutex;       // Print synchronization
-    pthread_mutex_t data_mutex;        // Data access synchronization
-    t_philo         *philos;            // Philosophers array
-} t_data;
+/* Forward declaration to avoid circular dependency */
+struct	s_data;
+
+/**
+ * @brief Structure representing an individual philosopher
+ * 
+ * Contains all data specific to each philosopher including their state,
+ * meal tracking, timing information, and synchronization primitives.
+ */
+typedef struct s_philo
+{
+	/* Philosopher identification and meal tracking */
+	int				id_philo;			/**< Unique identifier for the philosopher (1 to N) */
+	int				meals_count;		/**< Number of meals this philosopher has eaten */
+	long long		last_time_t_eat;	/**< Timestamp of when this philosopher last started eating */
+
+	/* Reference to shared simulation data */
+	struct s_data	*data;				/**< Pointer to shared simulation data structure */
+	
+	/* Current state of the philosopher */
+	t_state			state;				/**< Current state (eating, sleeping, thinking, etc.) */
+
+	/* Fork synchronization - each philosopher has access to two forks */
+	pthread_mutex_t	*left_fork;			/**< Mutex for the fork on the philosopher's left */
+	pthread_mutex_t	*right_fork;		/**< Mutex for the fork on the philosopher's right */
+	
+	/* Individual philosopher data protection mutexes */
+	pthread_mutex_t	mut_state;			/**< Mutex to protect state changes */
+	pthread_mutex_t	mut_meals_count;	/**< Mutex to protect meals_count modifications */
+	pthread_mutex_t	mut_last_time_t_eat;/**< Mutex to protect last_time_t_eat modifications */
+
+}					t_philo;
+
+/**
+ * @brief Main data structure containing all simulation parameters and shared resources
+ * 
+ * This structure holds all the global simulation data including timing parameters,
+ * philosopher array, synchronization primitives, and monitoring threads.
+ * It serves as the central hub for all shared information in the simulation.
+ */
+typedef struct s_data
+{
+	/* Timing parameters (in milliseconds) */
+	int				time_t_eat;			/**< Time a philosopher spends eating */
+	int				time_t_sleep;		/**< Time a philosopher spends sleeping */
+	int				time_t_die;			/**< Maximum time without eating before death */
+	long long		time_t_start;		/**< Timestamp when simulation started */
+	
+	/* Simulation control */
+	bool			is_active;			/**< Flag indicating if simulation is still running */
+
+	/* Simulation parameters */
+	int				nb_philos;			/**< Total number of philosophers in simulation */
+	int				nb_meals;			/**< Required number of meals per philosopher (-1 if unlimited) */
+
+	/* Mutexes for protecting shared timing and control data */
+	pthread_mutex_t	mut_time_t_eat;		/**< Mutex for time_t_eat access */
+	pthread_mutex_t	mut_time_t_sleep;	/**< Mutex for time_t_sleep access */
+	pthread_mutex_t	mut_time_t_die;		/**< Mutex for time_t_die access */
+	pthread_mutex_t	mut_time_t_start;	/**< Mutex for time_t_start access */
+	pthread_mutex_t	mut_print;			/**< Mutex for synchronized console output */
+	pthread_mutex_t	mut_is_active;		/**< Mutex for is_active flag protection */
+	pthread_mutex_t	mut_nb_philos;		/**< Mutex for nb_philos access */
+	
+	/* Fork mutexes array - shared resources between philosophers */
+	pthread_mutex_t	*fork;				/**< Array of fork mutexes (nb_philos elements) */
+
+	/* Philosopher array */
+	t_philo			*philos;			/**< Array of all philosophers in the simulation */
+
+	/* Monitoring threads for simulation control */
+	pthread_t		monit_death;		/**< Thread monitoring for philosopher deaths */
+	pthread_t		monit_dining_complete;	/**< Thread monitoring for dining completion */
+	
+	/* Philosopher threads array */
+	pthread_t		*philosopher_th;	/**< Array of philosopher thread handles */
+
+}					t_data;
+
 ```
 
 #### Synchronization Strategy
